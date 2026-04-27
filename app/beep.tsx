@@ -68,8 +68,9 @@ export default function BeepScreen() {
     setGuessCs(0);
     setSaved(false);
 
-    // Random delay before first beep (1-3 seconds)
-    const delayMs = Math.floor(Math.random() * 2000) + 1000;
+    // Full 3s countdown before the first beep
+    const totalDelayBeforeFirstBeep = 3000;
+    
     setGameState('waiting');
     setCountdown(3);
 
@@ -83,7 +84,7 @@ export default function BeepScreen() {
       }
     }, 1000);
 
-    // First beep after delay
+    // First beep after full countdown + random delay
     timeoutRef.current = setTimeout(async () => {
       if (countdownRef.current) clearInterval(countdownRef.current);
       setGameState('first_beep');
@@ -105,7 +106,7 @@ export default function BeepScreen() {
           }, 500);
         }, intervalMs);
       }, 300);
-    }, delayMs);
+    }, totalDelayBeforeFirstBeep);
   }, []);
 
   const handleSubmitGuess = useCallback(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, FontSize, Spacing, BorderRadius } from '@/constants/theme';
@@ -18,24 +19,29 @@ import {
   deleteProfile,
   setActiveProfile,
   getActiveProfile,
+  renameProfile,
   UserProfile,
 } from '@/utils/storage';
 import GlowButton from '@/components/GlowButton';
 import * as Haptics from 'expo-haptics';
-
-const EMOJI_OPTIONS = [
-  '🎮', '⚡', '🔥', '🎯', '🚀', '💎', '🌟', '🏆',
-  '👾', '🤖', '🦊', '🐱', '🦁', '🐸', '🦄', '🐉',
-  '😎', '🥷', '👻', '🧙', '🎭', '🎪', '🌈', '💫',
-];
+import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function ProfilesScreen() {
   const router = useRouter();
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [activeId, setActiveId] = useState<string>('');
-  const [showCreate, setShowCreate] = useState(false);
+  
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Form state
   const [newName, setNewName] = useState('');
   const [newEmoji, setNewEmoji] = useState('🎮');
+
+  // Swipeable refs to close them
+  const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
 
   const loadProfiles = useCallback(async () => {
     const list = await getProfiles();
@@ -56,22 +62,36 @@ export default function ProfilesScreen() {
     []
   );
 
-  const handleCreateProfile = useCallback(async () => {
+  const handleSaveProfile = useCallback(async () => {
     if (!newName.trim()) {
       Alert.alert('Name required', 'Please enter a name for the profile.');
       return;
     }
+    const emojiToSave = newEmoji.trim() || '🎮';
+    
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const profile = await createProfile(newName, newEmoji);
-    await setActiveProfile(profile);
-    setShowCreate(false);
+    
+    if (modalMode === 'create') {
+      const profile = await createProfile(newName, emojiToSave);
+      await setActiveProfile(profile);
+    } else if (modalMode === 'edit' && editingId) {
+      await renameProfile(editingId, newName, emojiToSave);
+    }
+    
+    setShowModal(false);
     setNewName('');
     setNewEmoji('🎮');
+    setEditingId(null);
     await loadProfiles();
-  }, [newName, newEmoji, loadProfiles]);
+  }, [newName, newEmoji, modalMode, editingId, loadProfiles]);
 
-  const handleDeleteProfile = useCallback(
+  const confirmDeleteProfile = useCallback(
     (profile: UserProfile) => {
+      // Close swipeable if open
+      if (swipeableRefs.current[profile.id]) {
+        swipeableRefs.current[profile.id]?.close();
+      }
+
       if (profiles.length <= 1) {
         Alert.alert('Cannot delete', 'You need at least one profile.');
         return;
@@ -95,151 +115,209 @@ export default function ProfilesScreen() {
     [profiles, loadProfiles]
   );
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backText}>‹ Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>PROFILES</Text>
-          <View style={styles.backButton} />
-        </View>
+  const openEditModal = useCallback((profile: UserProfile) => {
+    // Close swipeable if open
+    if (swipeableRefs.current[profile.id]) {
+      swipeableRefs.current[profile.id]?.close();
+    }
+    
+    setModalMode('edit');
+    setEditingId(profile.id);
+    setNewName(profile.name);
+    setNewEmoji(profile.emoji);
+    setShowModal(true);
+  }, []);
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+  const openCreateModal = useCallback(() => {
+    setModalMode('create');
+    setEditingId(null);
+    setNewName('');
+    setNewEmoji('🎮');
+    setShowModal(true);
+  }, []);
+
+  const handleLongPress = useCallback((profile: UserProfile) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    Alert.alert(
+      'Profile Options',
+      `What would you like to do with ${profile.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Edit', 
+          onPress: () => openEditModal(profile)
+        },
+        { 
+          text: 'Delete', 
+          style: 'destructive', 
+          onPress: () => confirmDeleteProfile(profile) 
+        },
+      ]
+    );
+  }, [openEditModal, confirmDeleteProfile]);
+
+  const renderRightActions = (profile: UserProfile) => {
+    return (
+      <View style={styles.swipeActions}>
+        <TouchableOpacity
+          style={[styles.swipeButton, { backgroundColor: Colors.neonYellowDim, borderColor: Colors.neonYellow + '40' }]}
+          onPress={() => openEditModal(profile)}
         >
-          {/* Profile list */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>SELECT PLAYER</Text>
-            {profiles.map((profile) => {
-              const isActive = profile.id === activeId;
-              return (
-                <TouchableOpacity
-                  key={profile.id}
-                  style={[
-                    styles.profileCard,
-                    isActive && styles.profileCardActive,
-                  ]}
-                  onPress={() => handleSwitchProfile(profile)}
-                  onLongPress={() => handleDeleteProfile(profile)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.profileEmoji}>{profile.emoji}</Text>
-                  <View style={styles.profileInfo}>
-                    <Text style={[styles.profileName, isActive && styles.profileNameActive]}>
-                      {profile.name}
-                    </Text>
-                    {isActive && (
-                      <Text style={styles.activeLabel}>ACTIVE</Text>
-                    )}
-                  </View>
-                  {isActive && (
-                    <View style={styles.activeDot} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Add profile button */}
-          <View style={styles.addSection}>
-            <GlowButton
-              title="New Profile"
-              onPress={() => setShowCreate(true)}
-              color={Colors.neonCyan}
-              size="large"
-              icon="+"
-            />
-          </View>
-
-          <Text style={styles.hintText}>
-            Long press a profile to delete it
-          </Text>
-        </ScrollView>
+          <Text style={styles.swipeButtonIcon}>✏️</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.swipeButton, { backgroundColor: Colors.dangerDim, borderColor: Colors.danger + '40' }]}
+          onPress={() => confirmDeleteProfile(profile)}
+        >
+          <Text style={styles.swipeButtonIcon}>🗑</Text>
+        </TouchableOpacity>
       </View>
+    );
+  };
 
-      {/* ─── Create Profile Modal ────────────────────────────────────── */}
-      <Modal
-        visible={showCreate}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCreate(false)}
-      >
-        <View style={modalStyles.overlay}>
-          <View style={modalStyles.container}>
-            <Text style={modalStyles.title}>New Profile</Text>
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Text style={styles.backText}>‹ Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>PROFILES</Text>
+            <View style={styles.backButton} />
+          </View>
 
-            {/* Emoji picker */}
-            <Text style={modalStyles.label}>CHOOSE AVATAR</Text>
-            <View style={modalStyles.emojiGrid}>
-              {EMOJI_OPTIONS.map((e) => (
-                <TouchableOpacity
-                  key={e}
-                  style={[
-                    modalStyles.emojiOption,
-                    newEmoji === e && modalStyles.emojiSelected,
-                  ]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setNewEmoji(e);
-                  }}
-                  activeOpacity={0.6}
-                >
-                  <Text style={modalStyles.emojiText}>{e}</Text>
-                </TouchableOpacity>
-              ))}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Profile list */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>SELECT PLAYER</Text>
+              {profiles.map((profile) => {
+                const isActive = profile.id === activeId;
+                return (
+                  <Swipeable
+                    key={profile.id}
+                    ref={(ref) => { swipeableRefs.current[profile.id] = ref; }}
+                    renderRightActions={() => renderRightActions(profile)}
+                    friction={2}
+                    rightThreshold={40}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.profileCard,
+                        isActive && styles.profileCardActive,
+                      ]}
+                      onPress={() => handleSwitchProfile(profile)}
+                      onLongPress={() => handleLongPress(profile)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.profileEmoji}>{profile.emoji}</Text>
+                      <View style={styles.profileInfo}>
+                        <Text style={[styles.profileName, isActive && styles.profileNameActive]}>
+                          {profile.name}
+                        </Text>
+                        {isActive && (
+                          <Text style={styles.activeLabel}>ACTIVE</Text>
+                        )}
+                      </View>
+                      {isActive && (
+                        <View style={styles.activeDot} />
+                      )}
+                    </TouchableOpacity>
+                  </Swipeable>
+                );
+              })}
             </View>
 
-            {/* Name input */}
-            <Text style={modalStyles.label}>ENTER NAME</Text>
-            <TextInput
-              style={modalStyles.nameInput}
-              value={newName}
-              onChangeText={setNewName}
-              placeholder="Player name"
-              placeholderTextColor={Colors.textMuted}
-              maxLength={20}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={handleCreateProfile}
-            />
-
-            {/* Preview */}
-            <View style={modalStyles.preview}>
-              <Text style={modalStyles.previewEmoji}>{newEmoji}</Text>
-              <Text style={modalStyles.previewName}>
-                {newName.trim() || 'Player'}
-              </Text>
-            </View>
-
-            {/* Actions */}
-            <View style={modalStyles.actions}>
+            {/* Add profile button */}
+            <View style={styles.addSection}>
               <GlowButton
-                title="Create"
-                onPress={handleCreateProfile}
-                color={Colors.neonGreen}
+                title="New Profile"
+                onPress={openCreateModal}
+                color={Colors.neonCyan}
                 size="large"
-                icon="✓"
+                icon="+"
               />
-              <TouchableOpacity
-                onPress={() => {
-                  setShowCreate(false);
-                  setNewName('');
-                  setNewEmoji('🎮');
-                }}
-                style={modalStyles.cancelButton}
-              >
-                <Text style={modalStyles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.hintText}>
+              Swipe left or long press to edit / delete
+            </Text>
+          </ScrollView>
+        </View>
+
+        {/* ─── Create/Edit Profile Modal ────────────────────────────────────── */}
+        <Modal
+          visible={showModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowModal(false)}
+        >
+          <View style={modalStyles.overlay}>
+            <View style={modalStyles.container}>
+              <Text style={modalStyles.title}>
+                {modalMode === 'create' ? 'New Profile' : 'Edit Profile'}
+              </Text>
+
+              {/* Emoji Input */}
+              <Text style={modalStyles.label}>AVATAR (EMOJI)</Text>
+              <TextInput
+                style={modalStyles.emojiInput}
+                value={newEmoji}
+                onChangeText={setNewEmoji}
+                placeholder="🎮"
+                placeholderTextColor={Colors.textMuted}
+                maxLength={4} // Some emojis use multiple characters
+                textAlign="center"
+              />
+
+              {/* Name input */}
+              <Text style={modalStyles.label}>ENTER NAME</Text>
+              <TextInput
+                style={modalStyles.nameInput}
+                value={newName}
+                onChangeText={setNewName}
+                placeholder="Player name"
+                placeholderTextColor={Colors.textMuted}
+                maxLength={20}
+                autoFocus={modalMode === 'create'}
+                returnKeyType="done"
+                onSubmitEditing={handleSaveProfile}
+              />
+
+              {/* Preview */}
+              <View style={modalStyles.preview}>
+                <Text style={modalStyles.previewEmoji}>{newEmoji || '🎮'}</Text>
+                <Text style={modalStyles.previewName}>
+                  {newName.trim() || 'Player'}
+                </Text>
+              </View>
+
+              {/* Actions */}
+              <View style={modalStyles.actions}>
+                <GlowButton
+                  title={modalMode === 'create' ? "Create" : "Save"}
+                  onPress={handleSaveProfile}
+                  color={Colors.neonGreen}
+                  size="large"
+                  icon="✓"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowModal(false)}
+                  style={modalStyles.cancelButton}
+                >
+                  <Text style={modalStyles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+        </Modal>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }
 
@@ -276,28 +354,18 @@ const modalStyles = StyleSheet.create({
     fontWeight: '600',
     marginTop: Spacing.xs,
   },
-  emojiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.xs,
-    justifyContent: 'center',
-  },
-  emojiOption: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
+  emojiInput: {
     backgroundColor: Colors.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  emojiSelected: {
-    borderColor: Colors.neonCyan,
-    backgroundColor: Colors.neonCyanDim,
-  },
-  emojiText: {
-    fontSize: 22,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    color: Colors.white,
+    fontSize: 32,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    textAlign: 'center',
+    alignSelf: 'center',
+    minWidth: 80,
   },
   nameInput: {
     backgroundColor: Colors.surfaceLight,
@@ -443,6 +511,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 6,
     elevation: 4,
+  },
+
+  // Swipe actions
+  swipeActions: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    paddingLeft: Spacing.xs,
+  },
+  swipeButton: {
+    width: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+  },
+  swipeButtonIcon: {
+    fontSize: 24,
   },
 
   // Add section
