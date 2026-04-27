@@ -20,18 +20,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Profile bar */}
-        <TouchableOpacity
-          style={styles.profileBar}
-          onPress={() => router.push('/profiles')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.profileEmoji}>{profile.emoji}</Text>
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{profile.name}</Text>
-            <Text style={styles.profileHint}>tap to switch ›</Text>
-          </View>
-        </TouchableOpacity>
+
 
         {/* Header */}
         <View style={styles.header}>
@@ -95,11 +84,19 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
+        {/* Footer (Profile Switch) */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            How well do you know time?
-          </Text>
+          <TouchableOpacity
+            style={styles.profileBar}
+            onPress={() => router.push('/profiles')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.profileEmoji}>{profile.emoji}</Text>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{profile.name}</Text>
+              <Text style={styles.profileHint}>tap to switch ›</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
