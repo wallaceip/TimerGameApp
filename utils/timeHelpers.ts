@@ -34,8 +34,8 @@ export function formatTime(centiseconds: number): string {
 
 /**
  * Format centiseconds adaptively:
- *  - Under 60s: SS.CC  (e.g. "05.30")
- *  - 60s+:      MM:SS.CC (e.g. "01:23.45")
+ *  - Under 60s: S.CCs   (e.g. "6.02s", "10.10s")
+ *  - 60s+:      M:SS.CCs (e.g. "1:05.30s")
  */
 export function formatTimeAdaptive(centiseconds: number): string {
   const totalSeconds = Math.floor(centiseconds / 100);
@@ -43,9 +43,9 @@ export function formatTimeAdaptive(centiseconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   if (minutes > 0) {
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+    return `${minutes}:${String(seconds).padStart(2, '0')}.${String(cs).padStart(2, '0')}s`;
   }
-  return `${String(seconds).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+  return `${seconds}.${String(cs).padStart(2, '0')}s`;
 }
 
 /**

@@ -19,7 +19,7 @@ export default function TimerDisplay({
   size = 'normal',
 }: TimerDisplayProps) {
   const timeStr = formatTimeAdaptive(centiseconds);
-  const hiddenStr = centiseconds < 6000 ? '--.--' : '--:--.--';
+  const hiddenStr = centiseconds < 6000 ? '--.--s' : '--:--.--s';
   const fontSize = size === 'large' ? FontSize.timerLarge : FontSize.timer;
 
   return (

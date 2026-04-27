@@ -1,15 +1,38 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors, FontSize, Spacing, BorderRadius } from '@/constants/theme';
 import GameCard from '@/components/GameCard';
+import { getActiveProfile, UserProfile } from '@/utils/storage';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [profile, setProfile] = useState<UserProfile>(getActiveProfile());
+
+  // Refresh profile when returning from profiles screen
+  useFocusEffect(
+    useCallback(() => {
+      setProfile(getActiveProfile());
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        {/* Profile bar */}
+        <TouchableOpacity
+          style={styles.profileBar}
+          onPress={() => router.push('/profiles')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.profileEmoji}>{profile.emoji}</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{profile.name}</Text>
+            <Text style={styles.profileHint}>tap to switch ›</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>⏱</Text>
@@ -91,17 +114,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xxl,
+    paddingTop: Spacing.xl,
     justifyContent: 'center',
-    gap: Spacing.xl,
+    gap: Spacing.lg,
   },
+
+  // Profile bar
+  profileBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.neonCyan + '25',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  profileEmoji: {
+    fontSize: 24,
+  },
+  profileInfo: {
+    gap: 1,
+  },
+  profileName: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.neonCyan,
+    letterSpacing: 0.5,
+  },
+  profileHint: {
+    fontSize: 9,
+    color: Colors.textMuted,
+    letterSpacing: 1,
+  },
+
+  // Header
   header: {
     alignItems: 'center',
     gap: Spacing.sm,
   },
   logo: {
-    fontSize: 56,
-    marginBottom: Spacing.sm,
+    fontSize: 48,
+    marginBottom: Spacing.xs,
   },
   title: {
     fontSize: FontSize.xxl + 8,
@@ -124,7 +180,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
   lineSegment: {
     height: 1,
@@ -191,7 +247,7 @@ const styles = StyleSheet.create({
 
   footer: {
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.sm,
   },
   footerText: {
     fontSize: FontSize.sm,
