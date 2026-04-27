@@ -15,8 +15,10 @@ import {
   generateBeepInterval,
   parseSmartInput,
   formatTimeShort,
+  getScoreRating,
 } from '@/utils/timeHelpers';
 import { playBeep } from '@/utils/sounds';
+import { getSettings, saveGameRecord, AppSettings, DEFAULT_SETTINGS } from '@/utils/storage';
 
 type GameState = 'ready' | 'waiting' | 'first_beep' | 'between' | 'second_beep' | 'guessing' | 'result';
 
@@ -27,8 +29,17 @@ export default function BeepScreen() {
   const [guessInput, setGuessInput] = useState('');
   const [guessCs, setGuessCs] = useState(0);
   const [countdown, setCountdown] = useState(0);
+  const [saved, setSaved] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const settingsRef = useRef<AppSettings>(DEFAULT_SETTINGS);
+
+  // Load settings on mount
+  useEffect(() => {
+    (async () => {
+      settingsRef.current = await getSettings();
+    })();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -50,10 +61,12 @@ export default function BeepScreen() {
 
   const startRound = useCallback(() => {
     clearTimers();
-    const interval = generateBeepInterval();
+    const { minCs, maxCs } = settingsRef.current.beep;
+    const interval = generateBeepInterval(minCs, maxCs);
     setIntervalCs(interval);
     setGuessInput('');
     setGuessCs(0);
+    setSaved(false);
 
     // Random delay before first beep (1-3 seconds)
     const delayMs = Math.floor(Math.random() * 2000) + 1000;
@@ -99,7 +112,18 @@ export default function BeepScreen() {
     const parsed = parseSmartInput(guessInput);
     setGuessCs(parsed);
     setGameState('result');
-  }, [guessInput]);
+
+    // Save to history
+    const diffCs = Math.abs(intervalCs - parsed);
+    const { label } = getScoreRating(diffCs);
+    saveGameRecord({
+      mode: 'beep',
+      targetCs: intervalCs,
+      actualCs: parsed,
+      diffCs,
+      rating: label,
+    }).then(() => setSaved(true));
+  }, [guessInput, intervalCs]);
 
   const handlePlayAgain = useCallback(() => {
     startRound();
@@ -120,6 +144,7 @@ export default function BeepScreen() {
           onPlayAgain={handlePlayAgain}
           onGoBack={handleGoBack}
           mode="beep"
+          saved={saved}
         />
       </SafeAreaView>
     );

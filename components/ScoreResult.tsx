@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, FontSize, Spacing, BorderRadius } from '@/constants/theme';
-import { formatTime, formatTimeShort, getScoreRating } from '@/utils/timeHelpers';
+import { formatTimeAdaptive, formatTimeShort, getScoreRating } from '@/utils/timeHelpers';
 import GlowButton from './GlowButton';
 
 interface ScoreResultProps {
@@ -10,6 +10,7 @@ interface ScoreResultProps {
   onPlayAgain: () => void;
   onGoBack: () => void;
   mode: 'stopwatch' | 'beep';
+  saved?: boolean;
 }
 
 export default function ScoreResult({
@@ -18,6 +19,7 @@ export default function ScoreResult({
   onPlayAgain,
   onGoBack,
   mode,
+  saved,
 }: ScoreResultProps) {
   const diffCs = Math.abs(targetCs - actualCs);
   const { label, emoji, color } = getScoreRating(diffCs);
@@ -36,7 +38,7 @@ export default function ScoreResult({
         <View style={styles.timeRow}>
           <Text style={styles.timeLabel}>TARGET</Text>
           <Text style={[styles.timeValue, { color: Colors.neonCyan }]}>
-            {mode === 'beep' ? formatTimeShort(targetCs) : formatTime(targetCs)}
+            {mode === 'beep' ? formatTimeShort(targetCs) : formatTimeAdaptive(targetCs)}
           </Text>
         </View>
 
@@ -45,7 +47,7 @@ export default function ScoreResult({
         <View style={styles.timeRow}>
           <Text style={styles.timeLabel}>YOUR TIME</Text>
           <Text style={[styles.timeValue, { color: Colors.neonMagenta }]}>
-            {mode === 'beep' ? formatTimeShort(actualCs) : formatTime(actualCs)}
+            {mode === 'beep' ? formatTimeShort(actualCs) : formatTimeAdaptive(actualCs)}
           </Text>
         </View>
 
@@ -57,6 +59,16 @@ export default function ScoreResult({
             {isOver ? '+' : '-'}{formatTimeShort(diffCs)}
           </Text>
         </View>
+
+        {/* Saved indicator */}
+        {saved && (
+          <>
+            <View style={styles.divider} />
+            <View style={styles.savedRow}>
+              <Text style={styles.savedText}>✓ Saved to history</Text>
+            </View>
+          </>
+        )}
       </View>
 
       {/* Actions */}
@@ -137,6 +149,15 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: Colors.surfaceBorder,
+  },
+  savedRow: {
+    alignItems: 'center',
+  },
+  savedText: {
+    fontSize: FontSize.xs,
+    color: Colors.neonGreen,
+    fontWeight: '600',
+    letterSpacing: 1,
   },
   actions: {
     alignItems: 'center',

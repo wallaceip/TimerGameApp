@@ -1,11 +1,12 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, FontSize, Spacing, BorderRadius } from '@/constants/theme';
 import TimerDisplay from '@/components/TimerDisplay';
 import GlowButton from '@/components/GlowButton';
 import ScoreResult from '@/components/ScoreResult';
-import { generateTargetTime, formatTime } from '@/utils/timeHelpers';
+import { generateTargetTime, formatTimeAdaptive, getScoreRating } from '@/utils/timeHelpers';
+import { getSettings, saveGameRecord, AppSettings, DEFAULT_SETTINGS } from '@/utils/storage';
 
 type GameState = 'ready' | 'memorize' | 'running' | 'result';
 
@@ -14,13 +15,24 @@ export default function StopwatchScreen() {
   const [gameState, setGameState] = useState<GameState>('ready');
   const [targetCs, setTargetCs] = useState(0);
   const [elapsedCs, setElapsedCs] = useState(0);
+  const [saved, setSaved] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef(0);
+  const settingsRef = useRef<AppSettings>(DEFAULT_SETTINGS);
+
+  // Load settings on mount
+  useEffect(() => {
+    (async () => {
+      settingsRef.current = await getSettings();
+    })();
+  }, []);
 
   const startNewRound = useCallback(() => {
-    const target = generateTargetTime();
+    const { minCs, maxCs } = settingsRef.current.stopwatch;
+    const target = generateTargetTime(minCs, maxCs);
     setTargetCs(target);
     setElapsedCs(0);
+    setSaved(false);
     setGameState('memorize');
   }, []);
 
@@ -40,9 +52,21 @@ export default function StopwatchScreen() {
     }
     // Calculate final elapsed time precisely
     const finalElapsed = Date.now() - startTimeRef.current;
-    setElapsedCs(Math.floor(finalElapsed / 10));
+    const finalCs = Math.floor(finalElapsed / 10);
+    setElapsedCs(finalCs);
     setGameState('result');
-  }, []);
+
+    // Save to history
+    const diffCs = Math.abs(targetCs - finalCs);
+    const { label } = getScoreRating(diffCs);
+    saveGameRecord({
+      mode: 'stopwatch',
+      targetCs,
+      actualCs: finalCs,
+      diffCs,
+      rating: label,
+    }).then(() => setSaved(true));
+  }, [targetCs]);
 
   const handlePlayAgain = useCallback(() => {
     startNewRound();
@@ -65,6 +89,7 @@ export default function StopwatchScreen() {
           onPlayAgain={handlePlayAgain}
           onGoBack={handleGoBack}
           mode="stopwatch"
+          saved={saved}
         />
       </SafeAreaView>
     );
@@ -146,7 +171,7 @@ export default function StopwatchScreen() {
               <View style={styles.targetReminder}>
                 <Text style={styles.targetReminderLabel}>TARGET</Text>
                 <Text style={styles.targetReminderValue}>
-                  {formatTime(targetCs)}
+                  {formatTimeAdaptive(targetCs)}
                 </Text>
               </View>
 

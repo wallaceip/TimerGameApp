@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, FontSize, Spacing } from '@/constants/theme';
-import { formatTime } from '@/utils/timeHelpers';
+import { formatTimeAdaptive } from '@/utils/timeHelpers';
 
 interface TimerDisplayProps {
   centiseconds: number;
@@ -18,7 +18,8 @@ export default function TimerDisplay({
   label,
   size = 'normal',
 }: TimerDisplayProps) {
-  const timeStr = formatTime(centiseconds);
+  const timeStr = formatTimeAdaptive(centiseconds);
+  const hiddenStr = centiseconds < 6000 ? '--.--' : '--:--.--';
   const fontSize = size === 'large' ? FontSize.timerLarge : FontSize.timer;
 
   return (
@@ -35,7 +36,7 @@ export default function TimerDisplay({
             },
           ]}
         >
-          {hidden ? '--:--.--' : timeStr}
+          {hidden ? hiddenStr : timeStr}
         </Text>
       </View>
     </View>

@@ -1,37 +1,24 @@
 /**
  * Generate a random target time in centiseconds.
- * Weighted distribution: ~70% under 30s, ~20% 30-60s, ~10% 60-90s
+ * Accepts optional min/max bounds (in centiseconds) from settings.
+ * Falls back to a weighted distribution if no bounds given.
  */
-export function generateTargetTime(): number {
-  const roll = Math.random();
-  let maxCs: number;
-
-  if (roll < 0.7) {
-    // Under 30 seconds (300-3000 centiseconds, minimum 3 seconds)
-    maxCs = 3000;
-    return Math.floor(Math.random() * (maxCs - 300)) + 300;
-  } else if (roll < 0.9) {
-    // 30-60 seconds
-    return Math.floor(Math.random() * 3000) + 3000;
-  } else {
-    // 60-90 seconds
-    return Math.floor(Math.random() * 3000) + 6000;
-  }
+export function generateTargetTime(minCs?: number, maxCs?: number): number {
+  const lo = minCs ?? 5;
+  const hi = maxCs ?? 1000;
+  const range = hi - lo;
+  return Math.floor(Math.random() * range) + lo;
 }
 
 /**
  * Generate a random beep interval in centiseconds.
- * Mostly 1-15 seconds (100-1500 cs)
+ * Accepts optional min/max bounds (in centiseconds) from settings.
  */
-export function generateBeepInterval(): number {
-  const roll = Math.random();
-  if (roll < 0.75) {
-    // 1-15 seconds
-    return Math.floor(Math.random() * 1400) + 100;
-  } else {
-    // 15-30 seconds
-    return Math.floor(Math.random() * 1500) + 1500;
-  }
+export function generateBeepInterval(minCs?: number, maxCs?: number): number {
+  const lo = minCs ?? 5;
+  const hi = maxCs ?? 1000;
+  const range = hi - lo;
+  return Math.floor(Math.random() * range) + lo;
 }
 
 /**
@@ -43,6 +30,22 @@ export function formatTime(centiseconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+}
+
+/**
+ * Format centiseconds adaptively:
+ *  - Under 60s: SS.CC  (e.g. "05.30")
+ *  - 60s+:      MM:SS.CC (e.g. "01:23.45")
+ */
+export function formatTimeAdaptive(centiseconds: number): string {
+  const totalSeconds = Math.floor(centiseconds / 100);
+  const cs = Math.floor(centiseconds % 100);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes > 0) {
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+  }
+  return `${String(seconds).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
 }
 
 /**

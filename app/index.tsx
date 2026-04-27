@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, FontSize, Spacing } from '@/constants/theme';
+import { Colors, FontSize, Spacing, BorderRadius } from '@/constants/theme';
 import GameCard from '@/components/GameCard';
 
 export default function HomeScreen() {
@@ -43,6 +43,33 @@ export default function HomeScreen() {
             color={Colors.neonMagenta}
             onPress={() => router.push('/beep')}
           />
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/history')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: Colors.neonGreenDim }]}>
+              <Text style={styles.actionEmoji}>📊</Text>
+            </View>
+            <Text style={[styles.actionLabel, { color: Colors.neonGreen }]}>History</Text>
+          </TouchableOpacity>
+
+          <View style={styles.actionDivider} />
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/settings')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: Colors.neonYellowDim }]}>
+              <Text style={styles.actionEmoji}>⚙️</Text>
+            </View>
+            <Text style={[styles.actionLabel, { color: Colors.neonYellow }]}>Settings</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
@@ -121,6 +148,47 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.xs,
     marginBottom: Spacing.xs,
   },
+
+  // Quick actions
+  quickActions: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    padding: Spacing.md,
+    alignItems: 'center',
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  actionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionEmoji: {
+    fontSize: 18,
+  },
+  actionLabel: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  actionDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: Colors.surfaceBorder,
+    marginHorizontal: Spacing.sm,
+  },
+
   footer: {
     alignItems: 'center',
     paddingVertical: Spacing.lg,
