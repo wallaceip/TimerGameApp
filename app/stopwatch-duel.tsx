@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { Colors, FontSize, Spacing, BorderRadius } from '@/constants/theme';
 import { generateTargetTime, formatTimeAdaptive, formatTimeShort, getScoreRating } from '@/utils/timeHelpers';
@@ -147,6 +147,7 @@ export default function StopwatchDuelScreen() {
   // ── RESULT SCREEN ──
   if (gameState === 'result') {
     return (
+      <GestureHandlerRootView style={styles.flex}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           {/* P2 result (top, rotated) */}
@@ -207,11 +208,13 @@ export default function StopwatchDuelScreen() {
           </View>
         </View>
       </SafeAreaView>
+      </GestureHandlerRootView>
     );
   }
 
   // ── MAIN GAME SCREENS ──
   return (
+    <GestureHandlerRootView style={styles.flex}>
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* ── READY STATE ── */}
@@ -316,6 +319,7 @@ export default function StopwatchDuelScreen() {
         )}
       </View>
     </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }
 
@@ -343,6 +347,15 @@ function PlayerSide({
   onStart: () => void;
   onStop: () => void;
 }) {
+  // Build tap gestures — each GestureDetector is independent, allowing simultaneous touches
+  const startGesture = Gesture.Tap()
+    .runOnJS(true)
+    .onEnd(() => { onStart(); });
+
+  const stopGesture = Gesture.Tap()
+    .runOnJS(true)
+    .onEnd(() => { onStop(); });
+
   // Player has stopped — show locked-in state
   if (stopped) {
     return (
@@ -368,20 +381,23 @@ function PlayerSide({
           </Text>
         </View>
         <Text style={styles.hintText}>🧠 Memorize, then start!</Text>
-        <GHTouchableOpacity
-          style={[
-            styles.duelBigButton,
-            {
-              backgroundColor: color + '15',
-              borderColor: color,
-              shadowColor: glowColor,
-            },
-          ]}
-          onPress={onStart}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.duelBigButtonText, { color }]}>START</Text>
-        </GHTouchableOpacity>
+        <GestureDetector gesture={startGesture}>
+          <View
+            style={[
+              styles.duelButton,
+              {
+                backgroundColor: color + '20',
+                borderColor: color,
+                shadowColor: glowColor,
+              },
+            ]}
+          >
+            <View style={styles.duelButtonContent}>
+              <Text style={styles.duelButtonIcon}>▶</Text>
+              <Text style={[styles.duelButtonText, { color }]}>START</Text>
+            </View>
+          </View>
+        </GestureDetector>
       </View>
     );
   }
@@ -408,20 +424,23 @@ function PlayerSide({
       </View>
 
       {/* Stop button */}
-      <GHTouchableOpacity
-        style={[
-          styles.duelBigButton,
-          {
-            backgroundColor: dimColor,
-            borderColor: color,
-            shadowColor: glowColor,
-          },
-        ]}
-        onPress={onStop}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.duelBigButtonText, { color }]}>STOP</Text>
-      </GHTouchableOpacity>
+      <GestureDetector gesture={stopGesture}>
+        <View
+          style={[
+            styles.duelButton,
+            {
+              backgroundColor: color + '20',
+              borderColor: color,
+              shadowColor: glowColor,
+            },
+          ]}
+        >
+          <View style={styles.duelButtonContent}>
+            <Text style={styles.duelButtonIcon}>⏹</Text>
+            <Text style={[styles.duelButtonText, { color }]}>STOP</Text>
+          </View>
+        </View>
+      </GestureDetector>
     </View>
   );
 }
@@ -496,6 +515,9 @@ function PlayerResult({
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -730,23 +752,32 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontWeight: '500',
   },
-  duelBigButton: {
-    width: '80%',
-    maxWidth: 260,
-    paddingVertical: Spacing.lg,
+  duelButton: {
     borderRadius: BorderRadius.lg,
-    borderWidth: 2.5,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: Spacing.xxl,
+    paddingVertical: Spacing.lg,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowRadius: 15,
+    elevation: 8,
+    minWidth: 160,
   },
-  duelBigButtonText: {
-    fontSize: FontSize.xl,
-    fontWeight: '900',
-    letterSpacing: 4,
+  duelButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  duelButtonIcon: {
+    fontSize: FontSize.lg,
+  },
+  duelButtonText: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
   },
 
   // Stopped state
