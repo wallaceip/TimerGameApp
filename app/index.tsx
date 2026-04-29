@@ -55,6 +55,14 @@ export default function HomeScreen() {
             color={Colors.neonMagenta}
             onPress={() => router.push('/beep')}
           />
+
+          <GameCard
+            title="Stopwatch Duel"
+            description="1v1 face-to-face — both players race to hit the target time on a split screen"
+            icon="⚔️"
+            color={Colors.neonOrange}
+            onPress={() => router.push('/stopwatch-duel')}
+          />
         </View>
 
         {/* Quick Actions */}
