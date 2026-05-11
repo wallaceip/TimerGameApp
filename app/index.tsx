@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors, FontSize, Spacing, BorderRadius } from '@/constants/theme';
@@ -54,6 +55,14 @@ export default function HomeScreen() {
             icon="🔔"
             color={Colors.neonMagenta}
             onPress={() => router.push('/beep')}
+          />
+
+          <GameCard
+            title="Stopwatch Duel"
+            description="1v1 face-to-face — both players race to hit the target time on a split screen"
+            icon="⚔️"
+            color={Colors.neonOrange}
+            onPress={() => router.push('/stopwatch-duel')}
           />
         </View>
 
