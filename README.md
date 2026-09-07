@@ -1,4 +1,4 @@
-# TimerGameApp
+# TimeSync
 
 A lightweight, interactive application where players test their precision, reflexes, and timing skills by attempting to stop a running timer as close as possible to a target time.
 
