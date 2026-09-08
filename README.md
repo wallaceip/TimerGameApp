@@ -1,59 +1,90 @@
 # TimeSync
 
-A lightweight, interactive application where players test their precision, reflexes, and timing skills by attempting to stop a running timer as close as possible to a target time.
+A mobile timing and synchronization application built with React Native and Expo. TimeSync tests precision and reaction time through clock synchronization mechanics and interactive timing challenges.
 
 ## Features
 
-- Precision timing mechanics with millisecond accuracy.
-- Clean and intuitive user interface.
-- Responsive design for both desktop and mobile devices.
-- Score tracking and challenge modes.
+- **Precision Timing Mechanics:** Accurate millisecond tracking for reflex and synchronization challenges.
+- **Cross-Platform Support:** Native performance across Android, iOS, and Web via Expo.
+- **Clean Mobile UI:** Intuitive, touch-friendly interface designed for rapid interaction.
+- **Dynamic Feedback:** Real-time scoring, latency/offset calculation, and round results.
 
 ## Tech Stack
 
-- **Frontend:** HTML5, CSS3, JavaScript
-- **Styling:** Modern CSS
-- **Deployment:** Static Web Hosting
+- **Framework:** React Native
+- **Platform:** Expo
+- **Language:** JavaScript / TypeScript
+- **Styling:** React Native StyleSheet
+
+## Prerequisites
+
+Before running the application, ensure you have the following installed:
+
+- **Node.js** (LTS version recommended)
+- **npm** or **yarn**
+- **Expo Go** app on your physical iOS or Android device (available on Google Play Store and Apple App Store), or a configured iOS Simulator / Android Emulator.
 
 ## Getting Started
 
-### Prerequisites
+### 1. Clone the Repository
 
-To run this project locally, you only need a modern web browser (such as Google Chrome, Mozilla Firefox, Microsoft Edge, or Safari).
+```bash
+git clone [https://github.com/wallaceip/timesync.git](https://github.com/wallaceip/timesync.git)
+cd timesync
 
-### Installation
+```
 
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/wallaceip/TimerGameApp.git](https://github.com/wallaceip/TimerGameApp.git)
-   ```
+### 2. Install Dependencies
 
-2. Navigate to the project directory:
-   ```bash
-   cd TimerGameApp
+```bash
+npm install
 
-   ```
+```
 
+### 3. Start the Development Server
 
-3. Open `index.html` directly in your web browser, or run it using a local development server (such as the Live Server extension in Visual Studio Code).
+```bash
+npx expo start
 
-## How to Play
+```
 
-1. Start the game by clicking the start button.
-2. Watch the timer count upward.
-3. Stop the timer as close as possible to the target time.
-4. Review your accuracy and try to beat your previous score.
+### 4. Run the Application
+
+Once the Metro bundler starts in your terminal:
+
+* **On a Physical Device:** Scan the displayed QR code using the **Expo Go** app (Android) or the native **Camera** app (iOS).
+* **On Android Emulator:** Press `a` in the terminal.
+* **On iOS Simulator:** Press `i` in the terminal (macOS required).
+* **In Web Browser:** Press `w` in the terminal.
+
+## Project Structure
+
+```text
+timesync/
+├── assets/          # App icons, splash screens, and static images
+├── components/      # Reusable UI elements (timers, buttons, display cards)
+├── screens/         # Main application views and game screens
+├── App.js           # Root application entry and state setup
+├── app.json         # Expo configuration and metadata
+├── package.json     # Project dependencies and run scripts
+└── README.md        # Documentation
+
+```
+
+## Available Scripts
+
+* `npx expo start` - Start the Expo development server.
+* `npx expo start --clear` - Clear Metro bundler cache before starting.
+* `npm run android` - Start the project directly on a connected Android device or emulator.
+* `npm run ios` - Start the project directly in the iOS simulator.
+* `npm run web` - Run the app in a web browser.
 
 ## Contributing
 
-Contributions are welcome. If you would like to suggest improvements, report bugs, or add new features, please follow these steps:
+Contributions, bug reports, and feature suggestions are welcome:
 
 1. Fork the repository.
-2. Create your feature branch (`git checkout -b feature/YourFeatureName`).
-3. Commit your changes (`git commit -m 'Add some YourFeatureName'`).
-4. Push to the branch (`git push origin feature/YourFeatureName`).
+2. Create a new feature branch (`git checkout -b feature/NewFeature`).
+3. Commit your changes (`git commit -m 'Add NewFeature'`).
+4. Push to your branch (`git push origin feature/NewFeature`).
 5. Open a Pull Request.
-
-## License
-
-Distributed under the MIT License. See the `LICENSE` file for more details.
